@@ -1,14 +1,11 @@
-cr <- read.csv("C:/Users/Glen Khumalo/OneDrive - North-West University/Documents/Postdoctoral_2025/Multi_omics intergration/OB_RNASeq_data.csv", header = TRUE, 
-               sep =",", row.names = 1)
-colnames(cr) <- sub("^X", "", colnames(cr))
-head(cr)
-mr <- read.csv("C:/Users/Glen Khumalo/OneDrive - North-West University/Documents/Postdoctoral_2025/Multi_omics intergration/OB_RNASeq_metadata.csv", header = TRUE, stringsAsFactors = FALSE,
-               sep= ";", row.names = 1)
+read_count <- read.csv("C/......")
+
+metadata <- read.csv("C/...metadata")
 
 
 dds <- DESeqDataSetFromMatrix(
-  countData = cr,
-  colData = mr,
+  countData = read_count,
+  colData = metadata,
   design = ~Genotype
 )
 
@@ -21,7 +18,7 @@ res <- results(dds, contrast = c("Genotype", "Ndufs4 KO", "WT"))
 res <- lfcShrink(dds, coef = "Genotype_WT_vs_Ndufs4.KO", res = res, type = "ashr")
 
 head(res)
-write.csv(as.data.frame(res), "DESeq2_results_OB.csv")
+write.csv(as.data.frame(res), "DESeq2_results.csv")
 
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -33,13 +30,9 @@ library(limma)
 library(impute)
 
 
-## Set wowrking directory
-setwd("C:/Users/Glen Khumalo/OneDrive - North-West University/Documents/Postdoctoral_2025/Multi_omics intergration")
-
 ###Proteomics
-prot_data <- read.csv("OB_SWATH_data.csv", row.names = 1, sep = ";", na.strings = c("NaN", "", "NA"))
+prot_data <- read.csv("Protein_data.csv", row.names = 1, sep = ";", na.strings = c("NaN", "", "NA"))
 prot_data <- prot_data[, !grepl("^X", colnames(prot_data)), drop = TRUE]
-
 
 # Remove empty columns and columns starting with X
 empty_cols <- sapply(prot_data, function(x) all(is.na(x)))
@@ -96,35 +89,4 @@ results <- topTable(fit2, number = Inf, adjust.method = "fdr")
 results$Protein <- rownames(results)
 
 
-#Remove empty columns
-# Remove empty columns and columns starting with X
-empty_cols <- sapply(prot_data, function(x) all(is.na(x)))
-prot_data <- prot_data[, !empty_cols]
 
-prot_data <- prot_data[, !grepl("^X", colnames(prot_data))]
-# Inspect
-dim(prot_data)
-head(prot_data[, 1:5])
-
-met_prot <- read.csv("OB_SWATH_metadata.csv", row.names = 1, sep = ";")
-# Create design matrix
-design <- model.matrix(~0 + met_prot$Genotype, data = met_prot)
-colnames(design) <- gsub("Genotype", "", colnames(design))
-design
-
-
-# Fit the linear model
-fit <- lmFit(prot_data, design)
-
-# Define contrasts (KO vs WT)
-contrast.matrix <- makeContrasts(KOvsWT = KO - WT, levels = design)
-fit2 <- contrasts.fit(fit, contrast.matrix)
-
-# Apply empirical Bayes moderation
-fit2 <- eBayes(fit2)
-
-
-dir.create("C:/Rlibs", showWarnings = FALSE)
-.libPaths("C:/Rlibs")
-install.packages("xfun")
-BiocManager::install("impute")
