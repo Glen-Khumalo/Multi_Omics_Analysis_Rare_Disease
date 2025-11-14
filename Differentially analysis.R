@@ -1,7 +1,5 @@
-read_count <- read.csv("C/......")
-
+read_count <- read.csv("C/......RNA_data")
 metadata <- read.csv("C/...metadata")
-
 
 dds <- DESeqDataSetFromMatrix(
   countData = read_count,
